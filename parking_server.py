@@ -20,7 +20,7 @@ model = YOLO('yolov8s.pt')
 
 video = cv2.VideoCapture('easy1.mp4')
 
-@app.route('/')
+@app.route('/detection_parkings')
 def index():
   while True:
     ret, frame = video.read()
