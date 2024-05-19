@@ -5,10 +5,12 @@ import pandas as pd
 from ultralytics import YOLO
 import cvzone
 from flask import Flask, render_template, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-with open('parking_mapping', 'rb') as f:
+with open('parking_setup', 'rb') as f:
   data = pickle.load(f)
   polylines, area_names = data['polylines'], data['area_names']
 
@@ -20,7 +22,7 @@ model = YOLO('yolov8s.pt')
 
 video = cv2.VideoCapture('easy1.mp4')
 
-@app.route('/detection_parkings')
+@app.route('/parking_detections')
 def index():
   while True:
     ret, frame = video.read()

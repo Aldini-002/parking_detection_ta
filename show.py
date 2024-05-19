@@ -5,7 +5,7 @@ import pandas as pd
 from ultralytics import YOLO
 import cvzone
 
-with open('parking_mapping', 'rb') as f:
+with open('parking_setup', 'rb') as f:
   data = pickle.load(f)
   polylines, area_names = data['polylines'], data['area_names']
 
