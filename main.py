@@ -589,7 +589,7 @@ def detection_parking(file_path, stop_event):
 
         list2 = []
         car = []
-        entry_field = []
+        filled_space = []
         empty_space = []
         parking_area = []
 
@@ -608,17 +608,17 @@ def detection_parking(file_path, stop_event):
                 hasil = cv2.pointPolygonTest(polyline, (cx1, cy1), False)
                 if hasil >= 0:
                     car.append(cx1)
-                    entry_field.append(area_names[i])
-                    empty_field = [x for x in area_names if x not in entry_field]
+                    filled_space.append(area_names[i])
+                    empty_space = [x for x in area_names if x not in filled_space]
 
-        datas = f"Parking : {len(parking_area) - len(car)}/{len(parking_area)}\nFilled Space : {len(entry_field)} : {entry_field}\nEmpty Space : {len(empty_field)} : {empty_field}"
+        datas = f"Parking : {len(parking_area) - len(car)}/{len(parking_area)}\nFilled Space : {len(filled_space)} : {filled_space}\nEmpty Space : {len(empty_space)} : {empty_space}"
         print(datas)
         
         send_datas = []
         for data in area_names:
             send_datas.append({
                 "area":data,
-                "status": True if data in entry_field else False
+                "status": True if data in filled_space else False
             })
             
         print(send_datas)
