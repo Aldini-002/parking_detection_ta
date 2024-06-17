@@ -25,6 +25,97 @@ def geometry_center(app_width, app_height):
     
     return center
 
+def manual_book():
+    modal = ctk.CTkToplevel(app)
+    modal.title("")
+    modal.geometry(geometry_center(300, 250))
+    modal.resizable(False, False)
+    
+    frame_header = ctk.CTkFrame(modal, bg_color="#18181b", fg_color="#18181b")
+    frame_header.pack(fill="x")
+    
+    frame_body = ctk.CTkFrame(modal, bg_color="#27272a", fg_color="#27272a")
+    frame_body.pack(expand="true", fill="both")
+    
+    frame_btn = ctk.CTkFrame(modal, bg_color="#18181b", fg_color="#18181b")
+    frame_btn.pack(fill="x")
+
+    # Memuat dan mengubah ukuran gambar menggunakan PIL
+    image_path = "images/icons/form.png"
+    image = Image.open(image_path)
+    resized_image = image.resize((20, 20))
+    
+    image_ctk = ctk.CTkImage(light_image=resized_image, size=(20, 20))
+
+    image_header = ctk.CTkLabel(frame_header, image=image_ctk, text="")
+    image_header.pack(side="left", fill="x", padx=(20,0), pady=(20))
+    
+    header = ctk.CTkLabel(frame_header, text="Manual Book", font=("Helvetica", 15, "bold"))
+    header.pack(side="left", fill="x", padx=10, pady=20) 
+    
+    style.configure("Treeview.Heading", font=("Helvetica", 10, "bold"))
+    
+    tree = ttk.Treeview(frame_body, columns=("#", "Key", "Function"), show="headings", height=0)
+    tree.heading("#", text="#")
+    tree.heading("Key", text="Key")
+    tree.heading("Function", text="Function")
+    
+    tree.column("#", width=30, stretch=False, anchor="center")
+    tree.column("Key", width=80, stretch=True)
+    tree.column("Function", stretch=True)
+    
+    style.configure("Treeview", rowheight=25, font=("Helvetica", 10), foreground="#1f2937")
+    style.map("Treeview", background=[("selected", "#4ade80")], foreground=[("selected", "#000")])
+    tree.tag_configure("evenrow", background="#d1d5db")
+    tree.tag_configure("oddrow", background="#e5e7eb")
+
+    
+    datas = [
+        {
+            "key":"i",
+            "function":"Show manual book"
+        },
+        {
+            "key":"left click",
+            "function":"Draw the polyline"
+        },
+        {
+            "key":"right click",
+            "function":"Delete the polyline"
+        },
+        {
+            "key":"s",
+            "function":"Save"
+        },
+        {
+            "key":"q",
+            "function":"Quit"
+        },
+    ]
+    
+    for i, data in enumerate(datas):
+        index = i+1
+        values = (index, data["key"], data["function"])
+        if i % 2 == 0:
+            tree.insert("", "end", values=values, tags="evenrow")
+        else:
+            tree.insert("", "end", values=values, tags="oddrow")
+        
+    tree.pack(expand="true", fill="both", padx=10, pady=10)
+    
+    def close():
+        modal.destroy()
+        
+    modal.protocol("WM_DELETE_WINDOW", lambda: close())
+    
+    btn = ctk.CTkButton(frame_btn, text="Hide", width=60, fg_color="#4ade80", text_color="#000", hover_color="#16a34a",command=lambda: close())
+    btn.pack(side="right", padx=(10), pady=10)
+    
+    modal.transient(app)
+    modal.grab_set()
+    modal.focus()
+    app.wait_window(modal)
+
 def modal_okcancel(message):
     result = [None]
     modal = ctk.CTkToplevel(app)
@@ -53,7 +144,7 @@ def modal_okcancel(message):
     image_header = ctk.CTkLabel(frame_header, image=image_ctk, text="")
     image_header.pack(side="left", fill="x", padx=(20,0), pady=(20))
     
-    header = ctk.CTkLabel(frame_header, text="WARNING", font=("Helvetica", 15, "bold"))
+    header = ctk.CTkLabel(frame_header, text="Warning", font=("Helvetica", 15, "bold"))
     header.pack(side="left", fill="x", padx=10, pady=20) 
     
     msg = ctk.CTkLabel(frame_msg, text=message, font=("Helvetica", 15), anchor="w")
@@ -110,7 +201,7 @@ def modal_input(message):
     image_header = ctk.CTkLabel(frame_header, image=image_ctk, text="")
     image_header.pack(side="left", fill="x", padx=(20,0), pady=(20))
     
-    header = ctk.CTkLabel(frame_header, text="FORM", font=("Helvetica", 15, "bold"))
+    header = ctk.CTkLabel(frame_header, text="Form", font=("Helvetica", 15, "bold"))
     header.pack(side="left", fill="x", padx=10, pady=20) 
     
     input_label = ctk.CTkLabel(frame_entry, text=message, font=("Helvetica", 12))
@@ -118,6 +209,7 @@ def modal_input(message):
     
     input_entry = ctk.CTkEntry(frame_entry)
     input_entry.grid(row=0, column=1, padx=(0, 30), sticky="we")
+    modal.after(100, input_entry.focus_set)
     
     def close(value):
         result[0] = value
@@ -168,7 +260,7 @@ def modal_alert(status, message):
     image_header = ctk.CTkLabel(frame_header, image=image_ctk, text="")
     image_header.pack(side="left", fill="x", padx=(20,0), pady=(20))
     
-    header = ctk.CTkLabel(frame_header, text=status.upper(), font=("Helvetica", 15, "bold"))
+    header = ctk.CTkLabel(frame_header, text=status.title(), font=("Helvetica", 15, "bold"))
     header.pack(side="left", fill="x", padx=10, pady=20) 
     
     msg = ctk.CTkLabel(frame_msg, text=message, font=("Helvetica", 13), wraplength=300)
@@ -197,7 +289,6 @@ def folder_check(folder_path):
     else:
         return True
 
-# file check
 def file_check(file_path):
     if not os.path.isfile(file_path):
         print(f"File not found : {file_path}")
@@ -209,13 +300,11 @@ def save_data(data):
     with open(data["file_path"], 'w') as f:
         json.dump(data, f)
     
-# get data
 def get_data(file_path):
     if file_check(file_path):
         with open(file_path, 'r') as f:
             return json.load(f)
 
-# get all data
 def get_all_data():
     datas = []
     folder_path = "data/parking_areas"
@@ -246,7 +335,6 @@ def all_area_names():
     
     return area_names
 
-# select row
 def select_row():
     data = {}
     select_item = tree.focus()
@@ -268,7 +356,6 @@ def select_row():
         modal_alert("warning", "No item selected")
     return data
 
-# select multi row
 def select_multi_row():
     ids = []
     datas = []
@@ -297,12 +384,10 @@ def select_multi_row():
         modal_alert("warning", "No item selected")
     return datas
 
-# header_title
 def header_title(title):
     header_title = ctk.CTkLabel(frame_header, text=title, font=("Helvetica", 20, "bold"))
     header_title.pack(side="top", ipady=20, fill="x")
 
-# clear widget
 def clear_widget(frame):
     for widget in frame.winfo_children():
         widget.destroy()
@@ -320,6 +405,10 @@ def setup_parking(area_name, source):
 
     app.withdraw()
     
+    modal_active = True
+    manual_book()
+    modal_active = False
+    
     area_id = str(uuid.uuid4())
     file_name = f'{area_name.replace(" ", "_")}.json'
     file_path = f"data/parking_areas/{file_name}"
@@ -328,7 +417,6 @@ def setup_parking(area_name, source):
     
     coordinates = []
     drawing = False
-    modal_active = False
 
     def draw_parking_mapping(event, x, y, flags, param):
         nonlocal polylines, area_names, coordinates, drawing, modal_active
@@ -382,7 +470,7 @@ def setup_parking(area_name, source):
 
         key = cv2.waitKey(100) & 0xFF
 
-        if key == ord('s') or key == ord('S'):
+        if key == 115 or key == 83:
             data = {
                 'area_id': area_id,
                 'area_name': area_name,
@@ -396,7 +484,7 @@ def setup_parking(area_name, source):
             modal_active = True
             modal_alert("success", f"{area_name} has been saved")
             modal_active = False
-        elif key == 27:
+        elif key == 113 or key == 81:
             data = get_data(file_path)
             if data:
                 if area_names != data['area_names']:
@@ -413,6 +501,10 @@ def setup_parking(area_name, source):
                 modal_active = False
                 if decision == "yes":
                     break
+        elif key == 105 or key == 73:
+            modal_active = True
+            manual_book()
+            modal_active = False
 
     video.release()
     cv2.destroyAllWindows()
@@ -432,6 +524,10 @@ def setup_parking_update(area_name, source, old_file_path):
 
     app.withdraw()
     
+    modal_active = True
+    manual_book()
+    modal_active = False
+    
     try:
         data = get_data(old_file_path)
         area_id = data["area_id"]
@@ -447,7 +543,6 @@ def setup_parking_update(area_name, source, old_file_path):
     
     coordinates = []
     drawing = False
-    modal_active = False
 
     def draw_parking_mapping(event, x, y, flags, param):
         nonlocal polylines, area_names, coordinates, drawing, modal_active
@@ -500,7 +595,7 @@ def setup_parking_update(area_name, source, old_file_path):
 
         key = cv2.waitKey(100) & 0xFF
 
-        if key == ord('s') or key == ord('S'):
+        if key == 115 or key == 83:
             os.remove(old_file_path)
             old_file_path = file_path
             data = {
@@ -516,7 +611,7 @@ def setup_parking_update(area_name, source, old_file_path):
             modal_active = True
             modal_alert("success", "All changes have been saved")
             modal_active = False
-        elif key == 27:
+        elif key == 113 or key == 81:
             data = get_data(file_path)
             if data:
                 if area_names != data['area_names']:
@@ -533,12 +628,19 @@ def setup_parking_update(area_name, source, old_file_path):
                 modal_active = False
                 if decision == "yes":
                     break
-    data_update = [{
-        "area_name":area_name,
-        "source":source,
-        "file_name":file_name,
-        "file_path":file_path
-    }]
+        elif key == 105 or key == 73:
+            modal_active = True
+            manual_book()
+            modal_active = False        
+                
+    data_update = [
+            {
+            "area_name":area_name,
+            "source":source,
+            "file_name":file_name,
+            "file_path":file_path
+            }
+        ]
 
     video.release()
     cv2.destroyAllWindows()
@@ -732,6 +834,8 @@ def check_parking(file_path):
         return
 
     app.withdraw()
+    
+    manual_book()
 
     while True:
         ret, frame = video.read()
@@ -783,8 +887,10 @@ def check_parking(file_path):
         cv2.imshow('FRAME', frame)
         key = cv2.waitKey(100) & 0xFF
         
-        if key == 27:
+        if key == 113 or key == 81:
             break
+        elif key == 105 or key == 73:
+            manual_book()
 
     video.release()
     cv2.destroyAllWindows()
@@ -862,6 +968,7 @@ def create_data():
     
     area_name_entry = ctk.CTkEntry(frame_content)
     area_name_entry.grid(row=0, column=1, padx=(0,40), pady=10, sticky="we")
+    area_name_entry.focus_set()
     
     source_label = ctk.CTkLabel(frame_content, text="Source", font=("Helvetica", 13))
     source_label.grid(row=1, column=0, padx=(40,10), pady=10, sticky="e")
@@ -909,6 +1016,7 @@ def update_data(data):
     area_name_entry = ctk.CTkEntry(frame_content)
     area_name_entry.grid(row=0, column=1, padx=(0,40), pady=10, sticky="we")
     area_name_entry.insert(0, data["area_name"])
+    area_name_entry.focus_set()
     
     source_label = ctk.CTkLabel(frame_content, text="Source", font=("Helvetica", 12))
     source_label.grid(row=1, column=0, padx=(40,10), pady=10, sticky="e")
