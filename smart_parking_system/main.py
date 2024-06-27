@@ -14,11 +14,7 @@ import pandas as pd
 import requests
 from ultralytics import YOLO
 import pytesseract
-
-'''
-output terminal management
-'''
-
+import time
 
 '''
 modal
@@ -38,7 +34,7 @@ def manual_book():
     frame_footer = ctk.CTkFrame(modal, bg_color="#18181b", fg_color="#18181b")
     frame_footer.pack(fill="x")
 
-    image_path = os.path.join(os.getcwd(), "data\icons\\form.png")
+    image_path = os.path.join(os.getcwd(), "data", "icons", "form.png")
     image = Image.open(image_path)
     resized_image = image.resize((20, 20))
     
@@ -130,7 +126,7 @@ def modal_okcancel(body):
     frame_footer.grid_columnconfigure((0,1), weight=1)
 
     # Memuat dan mengubah ukuran gambar menggunakan PIL
-    image_path = os.path.join(os.getcwd(), "data\icons\warning.png")
+    image_path = os.path.join(os.getcwd(), "data", "icons", "warning.png")
     image = Image.open(image_path)
     resized_image = image.resize((20, 20))
     
@@ -187,7 +183,7 @@ def modal_input(body):
     frame_footer.grid_columnconfigure((0,1), weight=1)
 
     # Memuat dan mengubah ukuran gambar menggunakan PIL
-    image_path = os.path.join(os.getcwd(), "data\icons\\form.png")
+    image_path = os.path.join(os.getcwd(), "data", "icons", "form.png")
     image = Image.open(image_path)
     resized_image = image.resize((20, 20))
     
@@ -242,11 +238,11 @@ def modal_alert(status, message):
     frame_footer.pack(fill="x")
 
     # Memuat dan mengubah ukuran gambar menggunakan PIL
-    image_path = os.path.join(os.getcwd(), "data\icons\warning.png")
+    image_path = os.path.join(os.getcwd(), "data", "icons", "warning.png")
     if status == "success":
-        image_path = os.path.join(os.getcwd(), "data\icons\success.png")
+        image_path = os.path.join(os.getcwd(), "data", "icons", "success.png")
     elif status == "failed":
-        image_path = os.path.join(os.getcwd(), "data\icons\\failed.png")
+        image_path = os.path.join(os.getcwd(), "data", "icons", "failed.png")
     image = Image.open(image_path)
     resized_image = image.resize((20, 20))
     
@@ -317,7 +313,7 @@ def get_all_json(folder_path):
 
 def get_all_parking_names():
     parking_names = []
-    file_path = os.path.join(os.getcwd(), "data/json/parking_detections")
+    file_path = os.path.join(os.getcwd(), "data", "json", "parking_detections")
     parkings = get_all_json(file_path)
     
     for parking in parkings:
@@ -327,7 +323,7 @@ def get_all_parking_names():
 
 def get_all_space_names():
     space_names = []
-    file_path = os.path.join(os.getcwd(), "data/json/parking_detections")
+    file_path = os.path.join(os.getcwd(), "data", "json", "parking_detections")
     parkings = get_all_json(file_path)
     
     for parking in parkings:
@@ -372,8 +368,8 @@ api management
 '''
 def request_api(url, payload, success, failed):
     try:
-        # response = requests.post(f"https://harezayoankristianto.online/api{url}", json=payload, timeout=10)
-        response = requests.post(f"http://localhost:5000/api{url}", json=payload, timeout=10)
+        response = requests.post(f"https://harezayoankristianto.online/api{url}", json=payload, timeout=10)
+        #response = requests.post(f"http://localhost:5000/api{url}", json=payload, timeout=10)
         response.raise_for_status()
         print(f"{success} : {response.status_code}")
     except requests.exceptions.RequestException as e:
@@ -397,8 +393,8 @@ def setup_parking_detection(parking_name, source):
     
     area_id = str(uuid.uuid4())
     file_name = f'{parking_name.replace(" ", "_")}.json'
-    folder_path = "\data\json\parking_detections"
-    file_path = os.path.join(os.getcwd()+folder_path, file_name)
+    folder_path = os.path.join(os.getcwd(), "data", "json", "parking_detections")
+    file_path = os.path.join(folder_path, file_name)
     space_names = []
     polylines = []
     
@@ -513,8 +509,8 @@ def setup_parking_detection_update(parking_name, source, old_file_path):
         polylines = []
     
     file_name = f'{parking_name.replace(" ", "_")}.json'
-    folder_path = "\data\json\parking_detections"
-    file_path = os.path.join(os.getcwd()+folder_path, file_name)
+    folder_path = os.path.join(os.getcwd(), "data", "json", "parking_detections")
+    file_path = os.path.join(folder_path, file_name)
     
     coordinates = []
     drawing = False
@@ -628,10 +624,10 @@ def detection_parking(file_path, stop_event):
     space_names = parking['space_names']
     source = parking['source']
 
-    with open(os.path.join(os.getcwd(), "data\coco\coco.txt"), "r") as my_file:
+    with open(os.path.join(os.getcwd(), "data", "coco", "coco.txt"), "r") as my_file:
         class_list = my_file.read().split("\n")
 
-    model = YOLO(os.path.join(os.getcwd(), "data\model\yolov8s.pt"))
+    model = YOLO(os.path.join(os.getcwd(), "data", "model", "yolov8s.pt"))
 
     video = cv2.VideoCapture(source if not source.isdigit() else int(source))
     
@@ -647,7 +643,7 @@ def detection_parking(file_path, stop_event):
 
         frame = cv2.resize(frame, (720, 480))
         result = model.predict(frame)
-        bounding_boxes = result[0].boxes.data
+        bounding_boxes = result[0].boxes.data.cpu().numpy()
         df = pd.DataFrame(bounding_boxes).astype("float")
 
         list2 = []
@@ -674,8 +670,8 @@ def detection_parking(file_path, stop_event):
                     filled_space.append(space_names[i])
                     empty_space = [x for x in space_names if x not in filled_space]
 
-        # datas = f"Parking : {len(parking_area) - len(car)}/{len(parking_area)}\nFilled Space : {len(filled_space)} : {filled_space}\nEmpty Space : {len(empty_space)} : {empty_space}"
-        # print(datas)
+        datas = f"Parking : {len(parking_area) - len(car)}/{len(parking_area)}\nFilled Space : {len(filled_space)} : {filled_space}\nEmpty Space : {len(empty_space)} : {empty_space}"
+        print(datas)
         
         payload = []
         for space in space_names:
@@ -683,9 +679,8 @@ def detection_parking(file_path, stop_event):
                 "space_name":space,
                 "status": True if space in filled_space else False
             })
-            
         print(parking_name)
-        #request_api("/parking_spaces", payload, f"{parking_name} : Space success to update", f"{parking_name} : Space failed to update")
+        request_api("/parking_spaces", payload, f"{parking_name} | Space success to update", f"{parking_name} | Space failed to update")
 
     video.release()
     cv2.destroyAllWindows()
@@ -699,10 +694,10 @@ def check_parking(file_path):
     space_names = parking['space_names']
     source = parking['source']
 
-    with open(os.path.join(os.getcwd(), "data\coco\coco.txt"), "r") as my_file:
+    with open(os.path.join(os.getcwd(), "data", "coco", "coco.txt"), "r") as my_file:
         clast_list = my_file.read().split("\n")
 
-    model = YOLO(os.path.join(os.getcwd(), "data\model\yolov8s.pt"))
+    model = YOLO(os.path.join(os.getcwd(), "data", "model", "yolov8s.pt"))
 
     video = cv2.VideoCapture(source if not source.isdigit() else int(source))
     
@@ -722,7 +717,7 @@ def check_parking(file_path):
 
         frame = cv2.resize(frame, (720, 480))
         result = model.predict(frame)
-        bounding_boxes = result[0].boxes.data
+        bounding_boxes = result[0].boxes.data.cpu().numpy()
         df = pd.DataFrame(bounding_boxes).astype("float")
         
         list2 = []
@@ -789,7 +784,6 @@ def start_check_parking(select_row):
 gate detection management
 '''
 def setup_gate(gate):
-    print(gate)
     source = gate["source"]
     video = cv2.VideoCapture(source if not source.isdigit() else int(source))
     
@@ -888,22 +882,22 @@ def detection_plat(file_path, stop_event):
     if not data:
         return
     
-    pytesseract.pytesseract.tesseract_cmd = os.getcwd()+"\data\\tesseract\\tesseract.exe"
+    pytesseract.pytesseract.tesseract_cmd = os.path.join(os.getcwd(), "data", "tesseract", "tesseract.exe")
     
     polylines = [np.array(polyline, np.int32) for polyline in data['polylines']]
     source = data['source']
     file_name = data["file_name"]
     gate_name = data["gate_name"]
-    url = "/parkings/in" if data["file_name"] == "gate_in.json" else "/parkings/out"
+    url = "/parkings/in" if file_name == "gate_in.json" else "/parkings/out"
+    print(url)
     url_gate = "/gates/in"
     
 
-    with open(os.getcwd()+"\data\coco\coco.txt", "r") as my_file:
+    with open(os.path.join(os.getcwd(), "data", "coco", "coco1.txt"), "r") as my_file:
         class_list = my_file.read().split("\n")
         
     # Load the YOLO model
-    # model = YOLO(os.getcwd()+'\data\model\yolov8s.pt')
-    model = YOLO(os.getcwd()+'\data\model\yolov8s.pt')
+    model = YOLO(os.path.join(os.getcwd(), 'data', 'model', 'best.pt'))
 
     video = cv2.VideoCapture(source if not source.isdigit() else int(source))
     
@@ -912,6 +906,8 @@ def detection_plat(file_path, stop_event):
         return
 
     while not stop_event.is_set():    
+        #time.sleep(1)
+        
         ret, frame = video.read()
         if not ret:
             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -919,12 +915,12 @@ def detection_plat(file_path, stop_event):
 
         frame = cv2.resize(frame, (720, 480))
         hasil = model.predict(frame)
-        a = hasil[0].boxes.data
+        a = hasil[0].boxes.data.cpu().numpy()
         px = pd.DataFrame(a).astype("float")
         
-        detection_in_area = "default"
         payload = {}
         gate_status = False
+        detection_in_area = "default"
 
         for index, row in px.iterrows():
             x1, y1, x2, y2 = int(row[0]), int(row[1]), int(row[2]), int(row[3])
@@ -949,35 +945,117 @@ def detection_plat(file_path, stop_event):
                     text = text[:9]  # Limit to a maximum of 9 characters
                     # Print recognized text in the terminal
                     detection_in_area = "validated"
-                    payload = {"code":text}
-                    #request_api(url, payload, f"{gate_name} : {text} berhasil di simpan", f"{gate_name} : {text} gagal di simpan")
-                    print(f"{gate_name} : {text}")
-        
+                    payload = {"code": text}
+                    print(f"Tervalidasi : {gate_name} : {text}")
+                print(f"Terdeteksi : {gate_name}")
+                
+        if detection_in_area == "validated":
+            request_api(url, payload, f"{gate_name} | success to send | {text}", f"{gate_name} | failed send to | {text}")
+
         if detection_in_area == "default":
             gate_status = False
-            # area_color = (255, 255, 255)
         elif detection_in_area == "detected":
             gate_status = False
-            # area_color = (255, 0, 0)
         elif detection_in_area == "validated":
             gate_status = True
-            # area_color = (0, 255, 0)
-        
-        # if file_name == "gate_in.json":
-            #request_api(url_gate, {"gateStatus":gate_status}, f"Data {gate_name} berhasil di simpan : {gate_status}", f"Data {gate_name} berhasil di simpan : {gate_status}")
+        print(detection_in_area)
             
-        # cv2.polylines(frame, [polylines[0]], True, area_color, 2)
-        # cv2.imshow("RGB", frame)
+        if gate_name == "Gate in":
+            request_api(url_gate, {"gateStatus":gate_status}, f"Gate open", f"Gate close")
+            if gate_status:
+                time.sleep(3)
+        
 
     video.release()
     cv2.destroyAllWindows()
+    
+def check_detection_plat(file_path):
+    data = get_json(file_path)
+    if not data:
+        return
+    
+    pytesseract.pytesseract.tesseract_cmd = os.path.join(os.getcwd(), "data", "tesseract", "tesseract.exe")
+    
+    polylines = [np.array(polyline, np.int32) for polyline in data['polylines']]
+    source = data['source']
+    file_name = data["file_name"]
+    gate_name = data["gate_name"]
+    
+
+    with open(os.path.join(os.getcwd(), "data", "coco", "coco1.txt"), "r") as my_file:
+        class_list = my_file.read().split("\n")
+        
+    # Load the YOLO model
+    model = YOLO(os.path.join(os.getcwd(), 'data', 'model', 'best.pt'))
+
+    video = cv2.VideoCapture(source if not source.isdigit() else int(source))
+    
+    if not video.isOpened():
+        print("Failed to start video")
+        return
+
+    while True:    
+        ret, frame = video.read()
+        if not ret:
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
+
+        frame = cv2.resize(frame, (720, 480))
+        hasil = model.predict(frame)
+        a = hasil[0].boxes.data.cpu().numpy()
+        px = pd.DataFrame(a).astype("float")
+        
+        detection_in_area = "default"
+
+        for index, row in px.iterrows():
+            x1, y1, x2, y2 = int(row[0]), int(row[1]), int(row[2]), int(row[3])
+            d = int(row[5])
+            c = class_list[d]
+            cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+            
+            result = cv2.pointPolygonTest(np.array(polylines[0], np.int32), (cx, cy), False)
+            if result >= 0:
+                detection_in_area = "detected"
+                
+                # Crop and preprocess the detected region for OCR
+                crop = frame[y1:y2, x1:x2]
+                gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                gray = cv2.bilateralFilter(gray, 10, 20, 20)
+
+                # Extract and clean text from the cropped image
+                text = pytesseract.image_to_string(gray).strip()
+                match = re.search(r'[A-Z]{1,2}\s?\d{1,4}\s?[A-Z0-9]{1,3}', text.upper())
+                if match:
+                    text = match.group(0).replace(' ', '')
+                    text = text[:9]  # Limit to a maximum of 9 characters
+                    # Print recognized text in the terminal
+                    detection_in_area = "validated"
+                    print(f"Tervalidasi : {gate_name} : {text}")
+                print(f"Terdeteksi : {gate_name}")
+        
+        if detection_in_area == "default":
+            area_color = (255, 255, 255)
+        elif detection_in_area == "detected":
+            area_color = (255, 0, 0)
+        elif detection_in_area == "validated":
+            area_color = (0, 255, 0)
+        
+        cv2.polylines(frame, [polylines[0]], True, area_color, 2)
+        cv2.imshow("RGB", frame)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    video.release()
+    cv2.destroyAllWindows()
+
 
 '''
 start system
 '''
 def start_system(select_rows):
     parkings = []
-    gates = get_all_json(os.getcwd()+"\data\json\\anpr")
+    gates = get_all_json(os.path.join(os.getcwd(), "data", "json", "anpr"))
     space_names = []
     payload = []    
     
@@ -1002,11 +1080,14 @@ def start_system(select_rows):
     
     for space_name in space_names:
         payload.append({
-            "space_name ":space_name,
+            "space_name":space_name,
             "status": True
         })
-    
-    #request_api("/parking_areas", parkings, "Parkings success to update", "Parking failed to update")
+        
+    for parking in parkings:
+        if "polylines" in parking:
+            del parking["polylines"]
+    request_api("/parking_areas", parkings, "Parkings success to update", "Parking failed to update")
     
     # Membuat stop event
     stop_event = threading.Event()
@@ -1027,7 +1108,8 @@ def start_system(select_rows):
         stop_event.set()
         for thread in threads:
             thread.join()
-        #request_api("/parking_spaces", payload, "Space success to set false", "Space failed to set false")
+        request_api("/parking_areas/delete", None, "Parking detection success to sh", "Parking detection failed to sh")
+        request_api("/gates/in", {"gateStatus":False}, f"Gate In success to sh", f"Gate In failed to sh")
         modal_alert("success", "System is stoped")
         control_window.destroy()
     
@@ -1046,7 +1128,7 @@ def start_system(select_rows):
     frame_btn.pack(fill="x")
 
     # Memuat dan mengubah ukuran gambar menggunakan PIL
-    image_path = os.path.join(os.getcwd(), "data\icons\success.png")
+    image_path = os.path.join(os.getcwd(), "data", "icons", "success.png")
     image = Image.open(image_path)
     resized_image = image.resize((20, 20))
     
@@ -1131,7 +1213,7 @@ def tabel():
     tree.tag_configure("oddrow", background="#e5e7eb")
 
     
-    file_path = os.path.join(os.getcwd(), "data/json/parking_detections")
+    file_path = os.path.join(os.getcwd(), "data", "json", "parking_detections")
     parkings = get_all_json(file_path)
     
     for i, parking in enumerate(parkings):
@@ -1250,18 +1332,18 @@ def delete_data():
         tabel()
 
 def entry_gate():
-    datas = get_all_json(os.getcwd()+"\data\json\\anpr")
+    datas = get_all_json(os.path.join(os.getcwd(), "data", "json", "anpr"))
     gate_in = {
         "gate_name":"Gate in",
         "file_name":"gate_in.json",
-        "file_path":os.getcwd()+"\data\json\\anpr\gate_in.json",
-        "folder_path":os.getcwd()+"\data\json\\anpr",
+        "file_path":os.path.join(os.getcwd(), "data", "json", "anpr", "gate_in.json"),
+        "folder_path":os.path.join(os.getcwd(), "data", "json", "anpr"),
     }
     gate_out = {
         "gate_name":"Gate out",
         "file_name":"gate_out.json",
-        "file_path":os.getcwd()+"\data\json\\anpr\gate_out.json",
-        "folder_path":os.getcwd()+"\data\json\\anpr",
+        "file_path":os.path.join(os.getcwd(), "data", "json", "anpr", "gate_out.json"),
+        "folder_path":os.path.join(os.getcwd(), "data", "json", "anpr"),
     }
     
     if len(datas):
@@ -1273,7 +1355,7 @@ def entry_gate():
     clear_widget(frame_action)
     
     gate_in_label = ctk.CTkLabel(frame_content, text="Gate In", font=("Helvetica", 12))
-    gate_in_label.grid(row=0, column=0, padx=(40,10), pady=10, sticky="e")
+    gate_in_label.grid(row=0, column=0, padx=(20,10), pady=10, sticky="e")
     
     gate_in_entry = ctk.CTkEntry(frame_content)
     gate_in_entry.grid(row=0, column=1, padx=(0,10), pady=10, sticky="we")
@@ -1281,17 +1363,25 @@ def entry_gate():
     gate_in_entry.focus_set()
     
     gate_in_btn = ctk.CTkButton(frame_content, text="Setup", width=100, fg_color="#4ade80", text_color="#000", hover_color="#16a34a", command=lambda: next(gate_in, gate_in_entry.get()))
-    gate_in_btn.grid(row=0, column=2, padx=(0,40), pady=10, sticky="we")
+    gate_in_btn.grid(row=0, column=2, padx=(0,10), pady=10, sticky="we")
+    
+    if file_check(gate_in["file_path"]):
+        gate_in_check_btn = ctk.CTkButton(frame_content, text="Check", width=100, fg_color="#4ade80", text_color="#000", hover_color="#16a34a", command=lambda: check_detection_plat(gate_in["file_path"]))
+        gate_in_check_btn.grid(row=0, column=3, padx=(0,20), pady=10, sticky="we")
     
     gate_out_label = ctk.CTkLabel(frame_content, text="Gate Out", font=("Helvetica", 12))
-    gate_out_label.grid(row=1, column=0, padx=(40,10), pady=10, sticky="e")
+    gate_out_label.grid(row=1, column=0, padx=(20,10), pady=10, sticky="e")
     
     gate_out_entry = ctk.CTkEntry(frame_content)
     gate_out_entry.grid(row=1, column=1, padx=(0,10), pady=10, sticky="we")
     gate_out_entry.insert(0, gate_out["source"] if "source" in gate_out else "")
     
     gate_out_btn = ctk.CTkButton(frame_content, text="Setup", width=100, fg_color="#4ade80", text_color="#000", hover_color="#16a34a", command=lambda: next(gate_out, gate_out_entry.get()))
-    gate_out_btn.grid(row=1, column=2, padx=(0,40), pady=10, sticky="we")
+    gate_out_btn.grid(row=1, column=2, padx=(0,10), pady=10, sticky="we")
+    
+    if file_check(gate_out["file_path"]):
+        gate_out_check_btn = ctk.CTkButton(frame_content, text="Check", width=100, fg_color="#4ade80", text_color="#000", hover_color="#16a34a", command=lambda: check_detection_plat(gate_out["file_path"]))
+        gate_out_check_btn.grid(row=1, column=3, padx=(0,20), pady=10, sticky="we")
 
     
     def next(data, source):
